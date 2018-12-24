@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 pi = 3.1415926535897932384626433832795
 L1Flag = True
 bern = False
-ins_cut = 8.0
-sub_cut = 8.0
+ins_cut = 8
+sub_cut = 8
 dataSet = 'YAGO39K'
 
 def rand(min, max):
@@ -19,20 +19,27 @@ def normal(x, miu, sigma):
     return 1.0 / math.sqrt(2 * pi) / sigma * math.exp(-1 * (x - miu) * (x - miu) / (2 * sigma * sigma))
 
 def randN(miu, sigma, min, max):
-    x = rand(min, max)
-    y = normal(x, miu, sigma)
-    dScope = rand(0.0, normal(miu, miu, sigma))
-    while dScope > y:
+    x=0
+    while True:
         x = rand(min, max)
         y = normal(x, miu, sigma)
         dScope = rand(0.0, normal(miu, miu, sigma))
+        if dScope <= y:
+            break
     return x
+
+def vecLen(a):
+    res = 0
+    for i in a:
+        res+=i*i
+    res = math.sqrt(res)
+    return res
 
 def sqr(x):
     return x * x
 
 def norm(a):
-    x = a.size
+    x = vecLen(a)
     if x > 1:
         a = np.divide(a, x)
     return a
@@ -43,9 +50,7 @@ def normR(r):
     return r
 
 def randMax(x):
-    res = (random.randint(1,1000000) * random.randint(1,1000000)) % x
-    while res < 0:
-        res += x
+    res = (random.randint(0,x-1) * random.randint(0,x-1)) % x
     return res
 
 relation_num, entity_num, concept_num, triple_num = 0, 0, 0, 0
@@ -65,22 +70,22 @@ class Train():
     def __init__(self):
         self.ok = {}  # key is a 1*2 tuple, value is a dict{int-int} 
         self.subClassOf_ok = {}  # key is a 1*2 tuple, value is an int 
-        self.instanceOf_ok = {}  # key is a 1*2 tuple, value is an int
+        self.instanceOf_ok = {}  # key is a 1*2 tuple, value is an int 
         self.subClassOf = []  # element is a 1*2 list 
         self.instanceOf = []  # element is a 1*2 list 
-        self.__fb_h = [] #1d int array
+        self.__fb_h = [] #1d int array 
         self.__fb_l = [] #1d int array 
         self.__fb_r = [] #1d int array 
         self.__n = 0
-        self.__res = 0.0
-        self.__rate, self.__margin, self.__margin_instance, self.__margin_subclass = 0.0, 0.0, 0.0, 0.0
+        self.__res = 0
+        self.__rate, self.__margin, self.__margin_instance, self.__margin_subclass = 0, 0, 0, 0
         self.__trainSize = 0
         self.__relation_vec = [] #2d float array 
         self.__entity_vec = [] #2d float array 
-        self.__concept_vec = [] #2d float array
+        self.__concept_vec = [] #2d float array 
         self.__relation_tmp = [] #2d float array 
-        self.__entity_tmp = [] #2d float array
-        self.__concept_tmp = [] #2d float array
+        self.__entity_tmp = [] #2d float array 
+        self.__concept_tmp = [] #2d float array 
         self.__concept_r = [] #1d float array 
         self.__concept_r_tmp = [] #1d float array 
     
@@ -115,12 +120,12 @@ class Train():
         self.__concept_r_tmp = np.arange(concept_num,dtype='float32')
         logger.info('start randN')
         for i in range(relation_num):
-            self.__relation_vec[i] = [randN(0, 1.0 / self.__n, -6 / math.sqrt(self.__n), 6 / math.sqrt(self.__n)) for ii in range(self.__n)]
+            self.__relation_vec[i] = [randN(0, 1 / self.__n, -6 / math.sqrt(self.__n), 6 / math.sqrt(self.__n)) for ii in range(self.__n)]
         for i in range(entity_num):
-            self.__entity_vec[i] = [randN(0, 1.0 / self.__n, -6 / math.sqrt(self.__n), 6 / math.sqrt(self.__n)) for ii in range(self.__n)]
+            self.__entity_vec[i] = [randN(0, 1 / self.__n, -6 / math.sqrt(self.__n), 6 / math.sqrt(self.__n)) for ii in range(self.__n)]
             self.__entity_vec[i] = norm(self.__entity_vec[i])
         for i in range(concept_num):
-            self.__concept_vec[i] = [randN(0, 1.0 / self.__n, -6 / math.sqrt(self.__n), 6 / math.sqrt(self.__n)) for ii in range(self.__n)]
+            self.__concept_vec[i] = [randN(0, 1 / self.__n, -6 / math.sqrt(self.__n), 6 / math.sqrt(self.__n)) for ii in range(self.__n)]
             self.__concept_vec[i] = norm(self.__concept_vec[i])
         self.__concept_r = [rand(0,1) for i in range(concept_num)]
         self.__trainSize = self.__fb_h.__len__() + self.instanceOf.__len__() + self.subClassOf.__len__()
@@ -140,7 +145,7 @@ class Train():
                 for k in range(int(batchSize)):
                     i = randMax(self.__trainSize)
                     if i < self.__fb_r.__len__():
-                        cut = 10 - int(epoch * 8.0 / nepoch)
+                        cut = 10 - int(epoch * 8 / nepoch)
                         self.__trainHLR(i, cut)
                     elif i < self.__fb_r.__len__()+self.instanceOf.__len__():
                         cut = 10 - int(epoch * ins_cut / nepoch)
@@ -153,7 +158,7 @@ class Train():
                 self.__concept_vec = self.__concept_tmp.copy()
                 self.__concept_r = self.__concept_r_tmp.copy()
             if epoch % 1 is 0:
-                logger.info('epoch : {} - res : {}'.format(epoch, self.__res))
+                logger.info('epoch : {} - res : {:.2f}'.format(epoch, self.__res))
             if epoch % 500 is 0 or epoch is nepoch - 1:
                 f2 = open("../vector/" + dataSet + "/relation2vec.vec", 'w')
                 f3 = open("../vector/" + dataSet + "/entity2vec.vec", 'w')
@@ -182,15 +187,15 @@ class Train():
     def __trainHLR(self, i, cut):
         global entity_num,instance_brother,right_num,left_num,bern
         j = 0
-        pr = 500
-        pr = 1000 * right_num[self.__fb_r[i]] / (right_num[self.__fb_r[i]] + left_num[self.__fb_r[i]]) if bern else pr
-        if random.randint(1,400000) % 1000 < pr:
+        pr = 1000 * right_num[self.__fb_r[i]] / (right_num[self.__fb_r[i]] + left_num[self.__fb_r[i]]) if bern else 500
+        if random.randint(0,999) < pr:
             while True:
                 if instance_brother[self.__fb_l[i]].__len__() > 0:
-                    if random.randint(1,400000) % 10 < cut:
+                    if random.randint(0,9) < cut:
                         j = randMax(entity_num)
                     else:
-                        j = random.randint(1,400000) % instance_brother[self.__fb_l[i]].__len__()
+                        tmp_num = instance_brother[self.__fb_l[i]].__len__()
+                        j = random.randint(0,tmp_num-1)
                         j = instance_brother[self.__fb_l[i]][j]
                 else:
                     j = randMax(entity_num)
@@ -200,10 +205,11 @@ class Train():
         else:
             while True:
                 if instance_brother[self.__fb_l[i]].__len__() > 0:
-                    if random.randint(1,400000) % 10 < cut:
+                    if random.randint(0,9) < cut:
                         j = randMax(entity_num)
                     else:
-                        j = random.randint(1,400000) % instance_brother[self.__fb_h[i]].__len__()
+                        tmp_num = instance_brother[self.__fb_h[i]].__len__()
+                        j = random.randint(0,tmp_num-1)
                         j = instance_brother[self.__fb_h[i]][j]
                 else:
                     j = randMax(entity_num)
@@ -218,13 +224,14 @@ class Train():
     def __trainInstanceOf(self, i, cut):
         i = i - self.__fb_h.__len__()
         j = 0
-        if random.randint(1,400000) % 2 is 0:
+        if random.randint(0,1) == 0:
             while True:
                 if instance_brother[self.instanceOf[i][0]].__len__() > 0:
-                    if random.randint(1,400000) % 10 < cut:
+                    if random.randint(0,9) < cut:
                         j = randMax(entity_num)
                     else:
-                        j = random.randint(1,400000) % instance_brother[self.instanceOf[i][0]].__len__()
+                        tmp_num = instance_brother[self.instanceOf[i][0]].__len__()
+                        j = random.randint(0,tmp_num-1)
                         j = instance_brother[self.instanceOf[i][0]][j]
                 else:
                     j = randMax(entity_num)
@@ -235,10 +242,11 @@ class Train():
         else:
             while True:
                 if concept_brother[self.instanceOf[i][1]].__len__() > 0:
-                    if random.randint(1,400000) % 10 < cut:
+                    if random.randint(0,9)< cut:
                         j = randMax(concept_num)
                     else:
-                        j = random.randint(1,400000) % concept_brother[self.instanceOf[i][1]].__len__()
+                        tmp_num = concept_brother[self.instanceOf[i][1]].__len__()
+                        j = random.randint(0,tmp_num-1)
                         j = concept_brother[self.instanceOf[i][1]][j]
                 else:
                     j = randMax(concept_num)
@@ -254,13 +262,14 @@ class Train():
     def __trainSubClassOf(self, i, cut):
         i = i - self.__fb_h.__len__() - self.instanceOf.__len__()
         j = 0
-        if random.randint(1,400000) % 2 is 0:
+        if random.randint(0,1) == 0:
             while True:
                 if concept_brother[self.subClassOf[i][0]].__len__() > 0:
-                    if random.randint(1,400000) % 10 < cut:
+                    if random.randint(0,9) < cut:
                         j = randMax(concept_num)
                     else:
-                        j = random.randint(1,400000) % concept_brother[self.subClassOf[i][0]].__len__()
+                        tmp_num = concept_brother[self.subClassOf[i][0]].__len__()
+                        j = random.randint(0,tmp_num-1)
                         j = concept_brother[self.subClassOf[i][0]][j]
                 else:
                     j = randMax(concept_num)
@@ -270,10 +279,11 @@ class Train():
         else:
             while True:
                 if concept_brother[self.subClassOf[i][1]].__len__() > 0:
-                    if random.randint(1,400000) % 10 < cut:
+                    if random.randint(0,9) < cut:
                         j = randMax(concept_num)
                     else:
-                        j = random.randint(1,400000) % concept_brother[self.subClassOf[i][1]].__len__()
+                        tmp_num = concept_brother[self.subClassOf[i][1]].__len__()
+                        j = random.randint(0,tmp_num-1) 
                         j = concept_brother[self.subClassOf[i][0]][j]
                 else:
                     j = randMax(concept_num)
@@ -291,26 +301,26 @@ class Train():
         sum1 = self.__calcSumHLT(e1_a, e2_a, rel_a)
         sum2 = self.__calcSumHLT(e1_b, e2_b, rel_b)
         if sum1 + self.__margin > sum2:
-            self.__res += self.__margin + sum1 - sum2
+            self.__res += (self.__margin + sum1 - sum2)
             self.__gradientHLR(e1_a, e2_a, rel_a, e1_b, e2_b, rel_b)
     
     def __doTrainInstanceOf(self, e_a, c_a, e_b, c_b):
         sum1 = self.__calcSumInstanceOf(e_a, c_a)
         sum2 = self.__calcSumInstanceOf(e_b, c_b)
-        if sum1 + self.__margin_instance > sum2:
+        if (sum1 + self.__margin_instance) > sum2:
             self.__res += (self.__margin_instance + sum1 - sum2)
             self.__gradientInstanceOf(e_a, c_a, e_b, c_b)
     
     def __doTrainSubClassOf(self, c1_a, c2_a, c1_b, c2_b):
-        sum1 = self.calcSumSubClassOf(c1_a, c2_a)
-        sum2 = self.calcSumSubClassOf(c1_b, c2_b)
-        if sum1 + self.__margin_subclass > sum2:
+        sum1 = self.__calcSumSubClassOf(c1_a, c2_a)
+        sum2 = self.__calcSumSubClassOf(c1_b, c2_b)
+        if (sum1 + self.__margin_subclass) > sum2:
             self.__res += (self.__margin_subclass + sum1 - sum2)
             self.__gradientSubClassOf(c1_a, c2_a, c1_b, c2_b)
     
     def __calcSumHLT(self, e1, e2, rel):
         global L1Flag
-        sum = 0.0
+        sum = 0
         if L1Flag:
             for ii in range(self.__n):
                 sum += math.fabs(self.__entity_vec[e2][ii] - self.__entity_vec[e1][ii] - self.__relation_vec[rel][ii])
@@ -327,7 +337,7 @@ class Train():
             return 0
         return dis - sqr(self.__concept_r[c])
     
-    def calcSumSubClassOf(self, c1, c2):
+    def __calcSumSubClassOf(self, c1, c2):
         dis = 0
         for i in range(self.__n):
             dis += sqr(self.__concept_vec[c1][i] - self.__concept_vec[c2][i])
@@ -347,9 +357,9 @@ class Train():
             x = 2 * (self.__entity_vec[e2_b][ii] - self.__entity_vec[e1_b][ii] - self.__relation_vec[rel_b][ii])
             if L1Flag:
                 x = 1 if x > 0 else -1
-            self.__relation_tmp[rel_a][ii] -= self.__rate * x
-            self.__entity_tmp[e1_a][ii] -= self.__rate * x
-            self.__entity_tmp[e2_a][ii] += self.__rate * x
+            self.__relation_tmp[rel_b][ii] -= self.__rate * x
+            self.__entity_tmp[e1_b][ii] -= self.__rate * x
+            self.__entity_tmp[e2_b][ii] += self.__rate * x
     
     def __gradientInstanceOf(self, e_a, c_a, e_b, c_b):
         dis = 0
@@ -380,7 +390,7 @@ class Train():
                 x = 2 * (self.__concept_vec[c1_a][i] - self.__concept_vec[c2_a][i])
                 self.__concept_tmp[c1_a][i] -= x * self.__rate
                 self.__concept_tmp[c2_a][i] -= -x * self.__rate
-            self.__concept_r_tmp[c1_a] -= -2 * self.__concept_r[c1_a] * self.__rate
+            self.__concept_r_tmp[c1_a] -= 2 * self.__concept_r[c1_a] * self.__rate
             self.__concept_r_tmp[c2_a] -= -2 * self.__concept_r[c2_a] * self.__rate
         dis = 0
         for i in range(self.__n):
@@ -390,7 +400,7 @@ class Train():
                 x = 2 * (self.__concept_vec[c1_b][i] - self.__concept_vec[c2_b][i])
                 self.__concept_tmp[c1_b][i] += x * self.__rate
                 self.__concept_tmp[c2_b][i] += -x * self.__rate
-            self.__concept_r_tmp[c1_b] += -2 * self.__concept_r[c1_b] * self.__rate
+            self.__concept_r_tmp[c1_b] += 2 * self.__concept_r[c1_b] * self.__rate
             self.__concept_r_tmp[c2_b] += -2 * self.__concept_r[c2_b] * self.__rate
 
 train = Train()
