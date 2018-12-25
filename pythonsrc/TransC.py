@@ -284,7 +284,7 @@ class Train():
                     else:
                         tmp_num = concept_brother[self.subClassOf[i][1]].__len__()
                         j = random.randint(0,tmp_num-1) 
-                        j = concept_brother[self.subClassOf[i][0]][j]
+                        j = concept_brother[self.subClassOf[i][1]][j]
                 else:
                     j = randMax(concept_num)
                 if not self.subClassOf_ok.__contains__((self.subClassOf[i][0], j)):
