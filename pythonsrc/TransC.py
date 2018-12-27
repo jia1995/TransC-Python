@@ -105,11 +105,18 @@ class Train():
     
     def setup(self, n_in, rate_in, margin_in, margin_ins, margin_sub):
         logger.info('Start train setup')
+        global instance_brother,instance_concept,concept_instance,concept_brother,relation_num,entity_num,concept_num,up_sub_concept,sub_up_concept
         self.__n, self.__rate, self.__margin, self.__margin_instance, self.__margin_subclass = n_in, rate_in, margin_in, margin_ins, margin_sub
         for i in range(instance_concept.__len__()):
-            instance_brother[i] = [concept_instance[instance_concept[i][j]][k] for j in range(instance_concept[i].__len__()) for k in range(concept_instance[instance_concept[i][j]].__len__()) if concept_instance[instance_concept[i][j]][k] is not i]
+            for j in range(instance_concept[i].__len__()):
+                for k in range(concept_instance[instance_concept[i][j]].__len__()):
+                    if concept_instance[instance_concept[i][j]][k] != i:
+                        instance_brother[i].append(concept_instance[instance_concept[i][j]][k])
         for i in range(sub_up_concept.__len__()):
-            concept_brother[i] = [up_sub_concept[sub_up_concept[i][j]][k] for j in range(sub_up_concept[i].__len__()) for k in range(up_sub_concept[sub_up_concept[i][j]].__len__()) if up_sub_concept[sub_up_concept[i][j]][k] is not i]
+            for j in range(sub_up_concept[i].__len__()):
+                for k in range(up_sub_concept[sub_up_concept[i][j]].__len__()):
+                    if up_sub_concept[sub_up_concept[i][j]][k] != i:
+                        concept_brother[i].append(up_sub_concept[sub_up_concept[i][j]][k])
         self.__relation_vec = np.zeros([relation_num, self.__n])
         self.__entity_vec = np.zeros([entity_num, self.__n])
         self.__relation_tmp = np.zeros([relation_num, self.__n])
@@ -195,7 +202,7 @@ class Train():
                         j = randMax(entity_num)
                     else:
                         tmp_num = instance_brother[self.__fb_l[i]].__len__()
-                        j = random.randint(0,tmp_num-1)
+                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
                         j = instance_brother[self.__fb_l[i]][j]
                 else:
                     j = randMax(entity_num)
@@ -209,7 +216,7 @@ class Train():
                         j = randMax(entity_num)
                     else:
                         tmp_num = instance_brother[self.__fb_h[i]].__len__()
-                        j = random.randint(0,tmp_num-1)
+                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
                         j = instance_brother[self.__fb_h[i]][j]
                 else:
                     j = randMax(entity_num)
@@ -217,11 +224,12 @@ class Train():
                     break
             self.__doTrainHLR(self.__fb_h[i], self.__fb_l[i], self.__fb_r[i], j, self.__fb_l[i], self.__fb_r[i])
         self.__relation_tmp[self.__fb_r[i]] = norm(self.__relation_tmp[self.__fb_r[i]])
-        self.__entity_tmp[self.__fb_h[i]] = norm(self.__entity_vec[self.__fb_h[i]])
+        self.__entity_tmp[self.__fb_h[i]] = norm(self.__entity_tmp[self.__fb_h[i]])
         self.__entity_tmp[self.__fb_l[i]] = norm(self.__entity_tmp[self.__fb_l[i]])
         self.__entity_tmp[j] = norm(self.__entity_tmp[j])
     
     def __trainInstanceOf(self, i, cut):
+        global concept_brother,entity_num,instance_brother,concept_num
         i = i - self.__fb_h.__len__()
         j = 0
         if random.randint(0,1) == 0:
@@ -231,7 +239,7 @@ class Train():
                         j = randMax(entity_num)
                     else:
                         tmp_num = instance_brother[self.instanceOf[i][0]].__len__()
-                        j = random.randint(0,tmp_num-1)
+                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
                         j = instance_brother[self.instanceOf[i][0]][j]
                 else:
                     j = randMax(entity_num)
@@ -246,7 +254,7 @@ class Train():
                         j = randMax(concept_num)
                     else:
                         tmp_num = concept_brother[self.instanceOf[i][1]].__len__()
-                        j = random.randint(0,tmp_num-1)
+                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
                         j = concept_brother[self.instanceOf[i][1]][j]
                 else:
                     j = randMax(concept_num)
@@ -260,6 +268,7 @@ class Train():
         self.__concept_r_tmp[self.instanceOf[i][1]] = normR(self.__concept_r_tmp[self.instanceOf[i][1]])
     
     def __trainSubClassOf(self, i, cut):
+        global concept_brother,concept_num
         i = i - self.__fb_h.__len__() - self.instanceOf.__len__()
         j = 0
         if random.randint(0,1) == 0:
@@ -269,7 +278,7 @@ class Train():
                         j = randMax(concept_num)
                     else:
                         tmp_num = concept_brother[self.subClassOf[i][0]].__len__()
-                        j = random.randint(0,tmp_num-1)
+                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
                         j = concept_brother[self.subClassOf[i][0]][j]
                 else:
                     j = randMax(concept_num)
@@ -283,7 +292,7 @@ class Train():
                         j = randMax(concept_num)
                     else:
                         tmp_num = concept_brother[self.subClassOf[i][1]].__len__()
-                        j = random.randint(0,tmp_num-1) 
+                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
                         j = concept_brother[self.subClassOf[i][1]][j]
                 else:
                     j = randMax(concept_num)
