@@ -202,8 +202,12 @@ class Train():
                         j = randMax(entity_num)
                     else:
                         tmp_num = instance_brother[self.__fb_l[i]].__len__()
-                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
-                        j = instance_brother[self.__fb_l[i]][j]
+                        if tmp_num<1:
+                            j=0
+                            break
+                        else:
+                            j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
+                            j = instance_brother[self.__fb_l[i]][j]
                 else:
                     j = randMax(entity_num)
                 if ((self.__fb_h[i], self.__fb_r[i]) not in self.ok) or (not self.ok[(self.__fb_h[i], self.__fb_r[i])].__contains__(j)):
@@ -216,8 +220,12 @@ class Train():
                         j = randMax(entity_num)
                     else:
                         tmp_num = instance_brother[self.__fb_h[i]].__len__()
-                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
-                        j = instance_brother[self.__fb_h[i]][j]
+                        if tmp_num<1:
+                            j=0
+                            break
+                        else:
+                            j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
+                            j = instance_brother[self.__fb_h[i]][j]
                 else:
                     j = randMax(entity_num)
                 if ((j, self.__fb_r[i]) not in self.ok) or( not self.ok[(j, self.__fb_r[i])].__contains__(self.__fb_l[i])):
@@ -239,8 +247,12 @@ class Train():
                         j = randMax(entity_num)
                     else:
                         tmp_num = instance_brother[self.instanceOf[i][0]].__len__()
-                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
-                        j = instance_brother[self.instanceOf[i][0]][j]
+                        if tmp_num<1:
+                            j=0
+                            break
+                        else:
+                            j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
+                            j = instance_brother[self.instanceOf[i][0]][j]
                 else:
                     j = randMax(entity_num)
                 if not self.instanceOf_ok.__contains__((j, self.instanceOf[i][1])):
@@ -254,8 +266,12 @@ class Train():
                         j = randMax(concept_num)
                     else:
                         tmp_num = concept_brother[self.instanceOf[i][1]].__len__()
-                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
-                        j = concept_brother[self.instanceOf[i][1]][j]
+                        if tmp_num<1:
+                            j=0
+                            break
+                        else:
+                            j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
+                            j = concept_brother[self.instanceOf[i][1]][j]
                 else:
                     j = randMax(concept_num)
                 if not self.instanceOf_ok.__contains__((self.instanceOf[i][0], j)):
@@ -278,8 +294,12 @@ class Train():
                         j = randMax(concept_num)
                     else:
                         tmp_num = concept_brother[self.subClassOf[i][0]].__len__()
-                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
-                        j = concept_brother[self.subClassOf[i][0]][j]
+                        if tmp_num<1:
+                            j=0
+                            break
+                        else:
+                            j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
+                            j = concept_brother[self.subClassOf[i][0]][j]
                 else:
                     j = randMax(concept_num)
                 if not self.subClassOf_ok.__contains__((j, self.subClassOf[i][1])):
@@ -292,8 +312,12 @@ class Train():
                         j = randMax(concept_num)
                     else:
                         tmp_num = concept_brother[self.subClassOf[i][1]].__len__()
-                        j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
-                        j = concept_brother[self.subClassOf[i][1]][j]
+                        if tmp_num<1:
+                            j=0
+                            break
+                        else:
+                            j = random.randint(0,tmp_num-1) if tmp_num>1 else 0
+                            j = concept_brother[self.subClassOf[i][1]][j]
                 else:
                     j = randMax(concept_num)
                 if not self.subClassOf_ok.__contains__((self.subClassOf[i][0], j)):
